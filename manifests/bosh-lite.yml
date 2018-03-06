@@ -1,22 +1,28 @@
 ---
-name: blackbox 
-
-director_uuid: <%= `bosh status --uuid` %>
+name: ((deployment))
 
 releases:
-  - name: blackbox
+  - name: vantablackbox
     version: latest
 
-jobs:
-  - name: blackbox 
-    instances: 1
-    resource_pool: blackbox
-    networks:
-      - name: blackbox
-        static_ips: &web-ips [10.244.8.2]
-    persistent_disk: 1024 # for consul
-    templates:
-      - {release: blackbox, name: blackbox}
+stemcells:
+- alias: stemcell
+  os: ((stemcell-os))
+  version: latest
+
+instance_groups:
+- name: garden
+  ...
+- name: blackbox
+  instances: 1
+  vm_type: ((vm))
+  networks:
+  - name: ((network))
+  azs: [((az))]
+  stemcell: stemcell
+  jobs:
+  - name: blackbox
+    release: vantablackbox
     properties:
       blackbox:
         expvar:
@@ -24,33 +30,15 @@ jobs:
             api_key: "THE_KEY"
           interval_in_seconds: 10
           sources:
-            - `{ "goroutine" => { "url" => "http://10.244.16.6:17013/debug/pprof/goroutine", "tags"=> ["garden-linux:goroutine"] } }`
+            goroutine:
+              url: "http://10.244.16.6:17013/debug/pprof/goroutine"
+              tags:
+              - "garden-linux:goroutine"
 
-networks:
-  - name: blackbox
-    subnets:
-      # network with static ip used for web
-      - range: 10.244.8.0/30
-        reserved: [10.244.8.1]
-        static: [10.244.8.2]
-        cloud_properties: {}
-
-resource_pools:
-  - name: blackbox 
-    network: blackbox
-    cloud_properties: {}
-    stemcell:
-      name: bosh-warden-boshlite-ubuntu-trusty-go_agent
-      version: latest
-
-compilation:
-  workers: 1
-  network: blackbox
-  cloud_properties: {}
+                #            - `{ "goroutine" => { "url" => "http://10.244.16.6:17013/debug/pprof/goroutine", "tags"=> ["garden-linux:goroutine"] } }`
 
 update:
   canaries: 1
   max_in_flight: 3
-  serial: false
-  canary_watch_time: 1000-60000
-  update_watch_time: 1000-60000
+  canary_watch_time: 1000-240000
+  update_watch_time: 1000-240000
