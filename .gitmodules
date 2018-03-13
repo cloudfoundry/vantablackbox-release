@@ -11,3 +11,9 @@
 [submodule "src/github.com/cactus/go-statsd-client"]
 	path = src/github.com/cactus/go-statsd-client
 	url = https://github.com/cactus/go-statsd-client.git
+[submodule "src/golang.org/x/net"]
+	path = src/golang.org/x/net
+	url = https://go.googlesource.com/net
+[submodule "src/golang.org/x/text"]
+	path = src/golang.org/x/text
+	url = https://go.googlesource.com/text
