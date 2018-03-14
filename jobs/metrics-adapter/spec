@@ -1,9 +1,22 @@
 ---
 name: metrics-adapter
 
-templates: {}
+templates:
+  bin/metrics-adapter_ctl.erb: bin/metrics-adapter_ctl
 
 packages:
-- metrics-adapter
+  - metrics-adapter
 
-properties: {}
+properties:
+  metrics_adapter.datadog_api_key:
+    description: "Datadog API key"
+
+  metrics_adapter.polling_interval:
+    description: "interval at which to poll and emit in seconds"
+    default: 10
+
+  metrics_adapter.garden_debug_listen_address:
+    description: "tcp address of the garden debug server"
+
+  metrics_adapter.hostname:
+    description: "hostname of the source vm"

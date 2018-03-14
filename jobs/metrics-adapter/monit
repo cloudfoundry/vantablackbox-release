@@ -1,0 +1,4 @@
+check process metrics-adapter
+  with pidfile  "/var/vcap/sys/run/metrics-adapter/metrics-adapter.pid"
+  start program "/var/vcap/jobs/metrics-adapter/bin/metrics-adapter_ctl start"
+  stop program  "/var/vcap/jobs/metrics-adapter/bin/metrics-adapter_ctl stop"
