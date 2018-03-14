@@ -3,6 +3,7 @@ package main
 import (
 	"errors"
 	"flag"
+	"fmt"
 	adapter "metrics-adapter"
 	"os"
 )
@@ -19,7 +20,7 @@ func initFlags() (flags, error) {
 	flag.Parse()
 
 	if f.dataDogAPIKey == "" || f.gardenDebugEndpoint == "" {
-		return flags{}, errors.New("blah")
+		return flags{}, errors.New("please provide all flags, see help for usage")
 	}
 
 	return f, nil
@@ -27,16 +28,19 @@ func initFlags() (flags, error) {
 
 func main() {
 	f, err := initFlags()
-	if err != nil {
-		os.Exit(1)
-	}
+	exitOn(err)
 
 	datadogURL := "https://app.datadoghq.com/api/v1/series"
 	datadogSeries, err := adapter.CollectMetrics(f.gardenDebugEndpoint)
+	exitOn(err)
+
+	err = adapter.EmitMetrics(datadogSeries, datadogURL, f.dataDogAPIKey)
+	exitOn(err)
+}
+
+func exitOn(err error) {
 	if err != nil {
-		panic(err)
-	}
-	if err := adapter.EmitMetrics(datadogSeries, datadogURL, f.dataDogAPIKey); err != nil {
-		panic(err)
+		fmt.Println(err.Error())
+		os.Exit(1)
 	}
 }

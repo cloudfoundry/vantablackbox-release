@@ -18,34 +18,37 @@ type GardenDebugMetrics struct {
 	Memstats      GardenMemStats `json:"memstats"`
 }
 
-type DatadogSeries []DatadogMetric
+type DatadogMetrics []DatadogMetric
+
+type DatadogSeries struct {
+	Series DatadogMetrics `json:"series"`
+}
 
 type DatadogMetric struct {
-	Metric string               `json:"metric"`
-	Points []DatadogMetricPoint `json:"points"`
-	Host   string               `json:"host"`
-	Tags   []string             `json:"tags"`
+	Metric string              `json:"metric"`
+	Points DatadogMetricPoints `json:"points"`
+	Host   string              `json:"host"`
+	Tags   []string            `json:"tags"`
 }
 
-type DatadogMetricPoint struct {
-	Timestamp time.Time
-	Value     float64
-}
+type DatadogMetricPoints [][2]float64
 
 func fromGardenDebugMetrics(m GardenDebugMetrics) DatadogSeries {
-	now := time.Now()
+	now := time.Now().Unix()
 	return DatadogSeries{
-		DatadogMetric{
-			Metric: "garden.numGoroutines",
-			Points: []DatadogMetricPoint{{now, float64(m.NumGoroutines)}},
-			Host:   "",
-			Tags:   []string{},
-		},
-		DatadogMetric{
-			Metric: "garden.memory",
-			Points: []DatadogMetricPoint{{now, m.Memstats.Alloc}},
-			Host:   "",
-			Tags:   []string{},
+		Series: DatadogMetrics{
+			DatadogMetric{
+				Metric: "garden.numGoroutines",
+				Points: DatadogMetricPoints{[2]float64{float64(now), float64(m.NumGoroutines)}},
+				Host:   "",
+				Tags:   []string{},
+			},
+			DatadogMetric{
+				Metric: "garden.memory",
+				Points: DatadogMetricPoints{[2]float64{float64(now), float64(m.Memstats.Alloc)}},
+				Host:   "",
+				Tags:   []string{},
+			},
 		},
 	}
 }
@@ -81,9 +84,13 @@ func EmitMetrics(metrics DatadogSeries, url, apiKey string) error {
 		return err
 	}
 
-	_, err = http.Post(fmt.Sprintf("%s?api_key=%s", url, apiKey), "application/json", bytes.NewBuffer(content))
+	res, err := http.Post(fmt.Sprintf("%s?api_key=%s", url, apiKey), "application/json", bytes.NewBuffer(content))
 	if err != nil {
 		return err
+	}
+
+	if res.StatusCode != http.StatusAccepted {
+		return fmt.Errorf("expected %d response but got %d", http.StatusAccepted, res.StatusCode)
 	}
 
 	return nil

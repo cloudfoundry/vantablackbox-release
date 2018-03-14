@@ -34,10 +34,6 @@ var _ = Describe("MetricsAdapterIntegration", func() {
 		gardenDebugServer.Close()
 	})
 
-	It("does not fail", func() {
-		Expect(session.Wait()).To(gexec.Exit(0))
-	})
-
 	Context("when the datadog-api-key is omitted", func() {
 		BeforeEach(func() {
 			cmd = exec.Command(metricsBinPath, "--garden-debug-endpoint", gardenDebugServer.URL)
