@@ -38,7 +38,7 @@ var _ = Describe("MetricsAdapter", func() {
 		})
 
 		JustBeforeEach(func() {
-			collectedMetrics, collectErr = adapter.CollectMetrics(url)
+			collectedMetrics, collectErr = adapter.CollectMetrics(url, "cactus")
 		})
 
 		It("does not return an error", func() {

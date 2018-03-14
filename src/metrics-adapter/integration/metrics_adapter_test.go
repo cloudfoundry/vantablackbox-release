@@ -36,7 +36,7 @@ var _ = Describe("MetricsAdapterIntegration", func() {
 
 	Context("when the datadog-api-key is omitted", func() {
 		BeforeEach(func() {
-			cmd = exec.Command(metricsBinPath, "--garden-debug-endpoint", gardenDebugServer.URL)
+			cmd = exec.Command(metricsBinPath, "--garden-debug-endpoint", gardenDebugServer.URL, "--host", "bar")
 		})
 
 		It("fails", func() {
@@ -46,7 +46,17 @@ var _ = Describe("MetricsAdapterIntegration", func() {
 
 	Context("when the garden-debug-endpoint is omitted", func() {
 		BeforeEach(func() {
-			cmd = exec.Command(metricsBinPath, "--datadog-api-key", "foo")
+			cmd = exec.Command(metricsBinPath, "--datadog-api-key", "foo", "--host", "bar")
+		})
+
+		It("fails", func() {
+			Expect(session.Wait()).NotTo(gexec.Exit(0))
+		})
+	})
+
+	Context("when the host is omitted", func() {
+		BeforeEach(func() {
+			cmd = exec.Command(metricsBinPath, "--datadog-api-key", "foo", "--garden-debug-endpoint", gardenDebugServer.URL)
 		})
 
 		It("fails", func() {

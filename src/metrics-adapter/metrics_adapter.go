@@ -33,27 +33,27 @@ type DatadogMetric struct {
 
 type DatadogMetricPoints [][2]float64
 
-func fromGardenDebugMetrics(m GardenDebugMetrics) DatadogSeries {
+func fromGardenDebugMetrics(m GardenDebugMetrics, host string) DatadogSeries {
 	now := time.Now().Unix()
 	return DatadogSeries{
 		Series: DatadogMetrics{
 			DatadogMetric{
 				Metric: "garden.numGoroutines",
 				Points: DatadogMetricPoints{[2]float64{float64(now), float64(m.NumGoroutines)}},
-				Host:   "",
+				Host:   host,
 				Tags:   []string{},
 			},
 			DatadogMetric{
 				Metric: "garden.memory",
 				Points: DatadogMetricPoints{[2]float64{float64(now), float64(m.Memstats.Alloc)}},
-				Host:   "",
+				Host:   host,
 				Tags:   []string{},
 			},
 		},
 	}
 }
 
-func CollectMetrics(url string) (DatadogSeries, error) {
+func CollectMetrics(url, host string) (DatadogSeries, error) {
 	body, err := getResponseBody(url)
 	if err != nil {
 		return DatadogSeries{}, err
@@ -65,7 +65,7 @@ func CollectMetrics(url string) (DatadogSeries, error) {
 		return DatadogSeries{}, err
 	}
 
-	return fromGardenDebugMetrics(gardenDebugMetrics), nil
+	return fromGardenDebugMetrics(gardenDebugMetrics, host), nil
 }
 
 func getResponseBody(url string) ([]byte, error) {
