@@ -78,12 +78,12 @@ func getResponseBody(url string) ([]byte, error) {
 func EmitMetrics(metrics DatadogSeries, url, apiKey string) error {
 	content, err := json.Marshal(metrics)
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	_, err = http.Post(fmt.Sprintf("%s?api_key=%s", url, apiKey), "application/json", bytes.NewBuffer(content))
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	return nil

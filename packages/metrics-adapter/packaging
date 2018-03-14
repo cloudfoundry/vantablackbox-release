@@ -1,0 +1,16 @@
+#!/usr/bin/env bash
+
+export GOROOT=$(readlink -nf /var/vcap/packages/golang)
+export GOPATH=${BOSH_INSTALL_TARGET}
+export PATH=$GOROOT/bin:$PATH
+
+mkdir -p ${BOSH_INSTALL_TARGET}/src
+cp -ra * ${BOSH_INSTALL_TARGET}/src
+
+mkdir ${BOSH_INSTALL_TARGET}/bin
+pushd ${BOSH_INSTALL_TARGET}/src/metrics-adapter
+  go build -o metrics-adapter cmd/metrics-adapter/main.go
+  mv metrics-adapter ${BOSH_INSTALL_TARGET}/bin
+popd
+
+rm -rf ${BOSH_INSTALL_TARGET}/src

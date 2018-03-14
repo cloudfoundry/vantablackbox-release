@@ -1,7 +1,3 @@
 golang/go1.10.linux-amd64.tar.gz:
   size: 119905205
-  object_id: 423c1e27-92b0-475b-679e-e8584e7e05d3
   sha: 693e2dfd99ef2d608b41c450efd9d277bf2a7f2f
-golang/go1.10.windows-amd64.zip:
-  size: 131903498
-  sha: 0b16bc357770b5867df565f80f22842d13d95fd2

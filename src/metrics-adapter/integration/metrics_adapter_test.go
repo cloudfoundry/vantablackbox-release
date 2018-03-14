@@ -1,6 +1,9 @@
 package metrics_adapter_integration_test
 
 import (
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"os/exec"
 
 	. "github.com/onsi/ginkgo"
@@ -10,16 +13,25 @@ import (
 
 var _ = Describe("MetricsAdapterIntegration", func() {
 	var (
-		session *gexec.Session
-		cmd     *exec.Cmd
+		session           *gexec.Session
+		cmd               *exec.Cmd
+		gardenDebugServer *httptest.Server
 	)
 
 	BeforeEach(func() {
-		cmd = exec.Command(metricsBinPath, "--datadog-api-key", "foo", "--garden-debug-endpoint", "localhost/foo")
+		gardenDebugServer = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			fmt.Fprintln(w, "{\"numGoRoutines\": 19}")
+		}))
+
+		cmd = exec.Command(metricsBinPath, "--datadog-api-key", "foo", "--garden-debug-endpoint", gardenDebugServer.URL)
 	})
 
 	JustBeforeEach(func() {
 		session = gexecStart(cmd)
+	})
+
+	AfterEach(func() {
+		gardenDebugServer.Close()
 	})
 
 	It("does not fail", func() {
@@ -28,7 +40,7 @@ var _ = Describe("MetricsAdapterIntegration", func() {
 
 	Context("when the datadog-api-key is omitted", func() {
 		BeforeEach(func() {
-			cmd = exec.Command(metricsBinPath, "--garden-debug-endpoint", "localhost/foo")
+			cmd = exec.Command(metricsBinPath, "--garden-debug-endpoint", gardenDebugServer.URL)
 		})
 
 		It("fails", func() {

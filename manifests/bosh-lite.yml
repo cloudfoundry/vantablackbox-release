@@ -2,8 +2,8 @@
 name: ((deployment))
 
 releases:
-  - name: vantablackbox
-    version: latest
+- name: vantablackbox
+  version: latest
 
 stemcells:
 - alias: stemcell
@@ -11,9 +11,7 @@ stemcells:
   version: latest
 
 instance_groups:
-- name: garden
-  ...
-- name: blackbox
+- name: vantablackbox
   instances: 1
   vm_type: ((vm))
   networks:
@@ -21,21 +19,8 @@ instance_groups:
   azs: [((az))]
   stemcell: stemcell
   jobs:
-  - name: blackbox
+  - name: metrics-adapter
     release: vantablackbox
-    properties:
-      blackbox:
-        expvar:
-          datadog:
-            api_key: "THE_KEY"
-          interval_in_seconds: 10
-          sources:
-            goroutine:
-              url: "http://10.244.16.6:17013/debug/pprof/goroutine"
-              tags:
-              - "garden-linux:goroutine"
-
-                #            - `{ "goroutine" => { "url" => "http://10.244.16.6:17013/debug/pprof/goroutine", "tags"=> ["garden-linux:goroutine"] } }`
 
 update:
   canaries: 1

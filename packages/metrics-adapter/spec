@@ -1,0 +1,8 @@
+---
+name: metrics-adapter
+
+dependencies:
+- golang
+
+files:
+- metrics-adapter/**/*

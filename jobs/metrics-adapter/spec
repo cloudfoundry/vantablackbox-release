@@ -1,0 +1,9 @@
+---
+name: metrics-adapter
+
+templates: {}
+
+packages:
+- metrics-adapter
+
+properties: {}
