@@ -23,7 +23,7 @@ var _ = Describe("MetricsAdapterIntegration", func() {
 			fmt.Fprintln(w, "{\"numGoRoutines\": 19}")
 		}))
 
-		cmd = exec.Command(metricsBinPath, "--datadog-api-key", "foo", "--garden-debug-endpoint", gardenDebugServer.URL)
+		cmd = exec.Command(metricsBinPath, "--wavefront-proxy-port", "1234", "--garden-debug-endpoint", gardenDebugServer.URL)
 	})
 
 	JustBeforeEach(func() {
@@ -34,7 +34,7 @@ var _ = Describe("MetricsAdapterIntegration", func() {
 		gardenDebugServer.Close()
 	})
 
-	Context("when the datadog-api-key is omitted", func() {
+	Context("when the wavefront proxy port is omitted", func() {
 		BeforeEach(func() {
 			cmd = exec.Command(metricsBinPath, "--garden-debug-endpoint", gardenDebugServer.URL, "--host", "bar")
 		})
@@ -46,7 +46,7 @@ var _ = Describe("MetricsAdapterIntegration", func() {
 
 	Context("when the garden-debug-endpoint is omitted", func() {
 		BeforeEach(func() {
-			cmd = exec.Command(metricsBinPath, "--datadog-api-key", "foo", "--host", "bar")
+			cmd = exec.Command(metricsBinPath, "--wavefront-proxy-port", "1234", "--host", "bar")
 		})
 
 		It("fails", func() {
@@ -56,7 +56,7 @@ var _ = Describe("MetricsAdapterIntegration", func() {
 
 	Context("when the host is omitted", func() {
 		BeforeEach(func() {
-			cmd = exec.Command(metricsBinPath, "--datadog-api-key", "foo", "--garden-debug-endpoint", gardenDebugServer.URL)
+			cmd = exec.Command(metricsBinPath, "--wavefront-proxy-port", "1234", "--garden-debug-endpoint", gardenDebugServer.URL)
 		})
 
 		It("fails", func() {

@@ -1,10 +1,10 @@
 package metricsadapter
 
 import (
-	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"net"
 	"net/http"
 	"time"
 )
@@ -18,34 +18,34 @@ type GardenDebugMetrics struct {
 	Memstats      GardenMemStats `json:"memstats"`
 }
 
-type DatadogMetrics []DatadogMetric
+type Metrics []Metric
 
-type DatadogSeries struct {
-	Series DatadogMetrics `json:"series"`
+type Series struct {
+	Series Metrics `json:"series"`
 }
 
-type DatadogMetric struct {
+type Metric struct {
 	Metric string              `json:"metric"`
-	Points DatadogMetricPoints `json:"points"`
+	Points MetricPoints `json:"points"`
 	Host   string              `json:"host"`
 	Tags   []string            `json:"tags"`
 }
 
-type DatadogMetricPoints [][2]float64
+type MetricPoints [][2]float64
 
-func fromGardenDebugMetrics(m GardenDebugMetrics, host string) DatadogSeries {
+func fromGardenDebugMetrics(m GardenDebugMetrics, host string) Series {
 	now := time.Now().Unix()
-	return DatadogSeries{
-		Series: DatadogMetrics{
-			DatadogMetric{
+	return Series{
+		Series: Metrics{
+			Metric{
 				Metric: "garden.numGoroutines",
-				Points: DatadogMetricPoints{[2]float64{float64(now), float64(m.NumGoroutines)}},
+				Points: MetricPoints{[2]float64{float64(now), float64(m.NumGoroutines)}},
 				Host:   host,
 				Tags:   []string{},
 			},
-			DatadogMetric{
+			Metric{
 				Metric: "garden.memory",
-				Points: DatadogMetricPoints{[2]float64{float64(now), float64(m.Memstats.Alloc)}},
+				Points: MetricPoints{[2]float64{float64(now), float64(m.Memstats.Alloc)}},
 				Host:   host,
 				Tags:   []string{},
 			},
@@ -53,16 +53,16 @@ func fromGardenDebugMetrics(m GardenDebugMetrics, host string) DatadogSeries {
 	}
 }
 
-func CollectMetrics(url, host string) (DatadogSeries, error) {
+func CollectMetrics(url, host string) (Series, error) {
 	body, err := getResponseBody(url)
 	if err != nil {
-		return DatadogSeries{}, err
+		return Series{}, err
 	}
 
 	var gardenDebugMetrics GardenDebugMetrics
 	err = json.Unmarshal(body, &gardenDebugMetrics)
 	if err != nil {
-		return DatadogSeries{}, err
+		return Series{}, err
 	}
 
 	return fromGardenDebugMetrics(gardenDebugMetrics, host), nil
@@ -78,19 +78,20 @@ func getResponseBody(url string) ([]byte, error) {
 	return ioutil.ReadAll(response.Body)
 }
 
-func EmitMetrics(metrics DatadogSeries, url, apiKey string) error {
-	content, err := json.Marshal(metrics)
+func EmitMetrics(metrics Series, wavefrontAddress string) error {
+	conn, err := net.Dial("tcp", wavefrontAddress)
 	if err != nil {
 		return err
 	}
+	defer conn.Close()
 
-	res, err := http.Post(fmt.Sprintf("%s?api_key=%s", url, apiKey), "application/json", bytes.NewBuffer(content))
-	if err != nil {
-		return err
-	}
-
-	if res.StatusCode != http.StatusAccepted {
-		return fmt.Errorf("expected %d response but got %d", http.StatusAccepted, res.StatusCode)
+	for _, m := range metrics.Series {
+		for _, p := range m.Points {
+			_, err := fmt.Fprintf(conn, "%s %f %f source=%s\n", m.Metric, p[1], p[0], m.Host)
+			if err != nil {
+				return err
+			}
+		}
 	}
 
 	return nil

@@ -1,7 +1,10 @@
 package metricsadapter_test
 
 import (
-	"encoding/json"
+	"bufio"
+	"fmt"
+	"io"
+	"net"
 	"net/http"
 	"time"
 
@@ -12,29 +15,25 @@ import (
 )
 
 var _ = Describe("MetricsAdapter", func() {
-	var server *ghttp.Server
-
-	BeforeEach(func() {
-		server = ghttp.NewServer()
-	})
-
-	AfterEach(func() {
-		server.Close()
-	})
-
 	Describe("CollectMetrics", func() {
 		var (
-			collectedMetrics metricsadapter.DatadogSeries
+			server           *ghttp.Server
+			collectedMetrics metricsadapter.Series
 			collectErr       error
 			url              string
 		)
 
 		BeforeEach(func() {
+			server = ghttp.NewServer()
 			server.AppendHandlers(ghttp.CombineHandlers(
 				ghttp.VerifyRequest("GET", "/"),
 				ghttp.RespondWith(http.StatusOK, `{"numGoRoutines": 19,"memstats":{"Alloc": 12345}}`),
 			))
 			url = server.URL()
+		})
+
+		AfterEach(func() {
+			server.Close()
 		})
 
 		JustBeforeEach(func() {
@@ -46,18 +45,18 @@ var _ = Describe("MetricsAdapter", func() {
 		})
 
 		It("collects metrics from the debug server", func() {
-			expected := metricsadapter.DatadogSeries{
-				Series: metricsadapter.DatadogMetrics{
-					metricsadapter.DatadogMetric{
+			expected := metricsadapter.Series{
+				Series: metricsadapter.Metrics{
+					metricsadapter.Metric{
 						Metric: "garden.numGoroutines",
-						Points: metricsadapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(19)}},
-						Host:   "",
+						Points: metricsadapter.MetricPoints{[2]float64{float64(time.Now().Unix()), float64(19)}},
+						Host:   "cactus",
 						Tags:   []string{},
 					},
-					metricsadapter.DatadogMetric{
+					metricsadapter.Metric{
 						Metric: "garden.memory",
-						Points: metricsadapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(12345)}},
-						Host:   "",
+						Points: metricsadapter.MetricPoints{[2]float64{float64(time.Now().Unix()), float64(12345)}},
+						Host:   "cactus",
 						Tags:   []string{},
 					},
 				},
@@ -95,65 +94,86 @@ var _ = Describe("MetricsAdapter", func() {
 	Describe("EmitMetrics", func() {
 		var (
 			emitErr        error
-			body           []byte
-			emittedMetrics = metricsadapter.DatadogSeries{
-				Series: metricsadapter.DatadogMetrics{
-					metricsadapter.DatadogMetric{
+			server         net.Listener
+			addr           string
+			requestsChan   chan string
+			emittedMetrics metricsadapter.Series
+		)
+
+		BeforeEach(func() {
+			var err error
+			server, err = net.Listen("tcp", "localhost:0")
+			Expect(err).NotTo(HaveOccurred())
+			addr = server.Addr().String()
+
+			requestsChan = make(chan string)
+
+			go func() {
+				defer GinkgoRecover()
+
+				for {
+					conn, err := server.Accept()
+					if err != nil {
+						close(requestsChan)
+						return
+					}
+
+					Expect(err).NotTo(HaveOccurred())
+
+					go func() {
+						defer GinkgoRecover()
+
+						connReader := bufio.NewReader(conn)
+						for {
+							line, err := connReader.ReadString('\n')
+							if err == io.EOF {
+								return
+							}
+							Expect(err).NotTo(HaveOccurred())
+							requestsChan <- line
+						}
+					}()
+				}
+			}()
+
+			emittedMetrics = metricsadapter.Series{
+				Series: metricsadapter.Metrics{
+					metricsadapter.Metric{
 						Metric: "garden.numGoroutines",
-						Points: metricsadapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(1)}},
-						Host:   "",
+						Points: metricsadapter.MetricPoints{[2]float64{float64(1000), float64(1)}},
+						Host:   "cactus",
 						Tags:   []string{},
 					},
-					metricsadapter.DatadogMetric{
+					metricsadapter.Metric{
 						Metric: "garden.memory",
-						Points: metricsadapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(2)}},
-						Host:   "",
+						Points: metricsadapter.MetricPoints{[2]float64{float64(2000), float64(2)}},
+						Host:   "cactus",
 						Tags:   []string{},
 					},
 				},
 			}
-		)
+		})
 
-		BeforeEach(func() {
-			server.AppendHandlers(ghttp.CombineHandlers(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-				GinkgoRecover()
-				body = readAll(r.Body)
-			}),
-				ghttp.RespondWith(http.StatusAccepted, `u r cool`),
-			))
+		AfterEach(func() {
+			server.Close()
+			Eventually(requestsChan).Should(BeClosed())
 		})
 
 		JustBeforeEach(func() {
-			emitErr = metricsadapter.EmitMetrics(emittedMetrics, server.URL()+"/emit", "abc")
+			emitErr = metricsadapter.EmitMetrics(emittedMetrics, addr)
 		})
 
 		It("does not return an error", func() {
 			Expect(emitErr).NotTo(HaveOccurred())
 		})
 
-		It("posts json", func() {
-			Expect(server.ReceivedRequests()[0].Header.Get("Content-Type")).To(Equal("application/json"))
-		})
+		It("posts metric in wavefront proxy format", func() {
+			var metricsLine string
+			Eventually(requestsChan).Should(Receive(&metricsLine))
+			Expect(metricsLine).To(Equal(fmt.Sprintf("garden.numGoroutines %f %f source=cactus\n", 1.0, 1000.0)))
 
-		It("emits valid metrics", func() {
-			var receivedMetrics metricsadapter.DatadogSeries
-			Expect(json.Unmarshal(body, &receivedMetrics)).To(Succeed())
-			Expect(receivedMetrics.Series).To(Equal(emittedMetrics.Series))
-		})
-
-		It("encodes the api_key in the request URL", func() {
-			Expect(server.ReceivedRequests()[0].URL.Query().Get("api_key")).To(Equal("abc"))
-		})
-
-		Context("when the HTTP response code is not a 202", func() {
-			BeforeEach(func() {
-				server.Reset()
-				server.AppendHandlers(ghttp.RespondWith(http.StatusServiceUnavailable, `not here`))
-			})
-
-			It("returns an error", func() {
-				Expect(emitErr).To(MatchError("expected 202 response but got 503"))
-			})
+			Eventually(requestsChan).Should(Receive(&metricsLine))
+			Expect(metricsLine).To(Equal(fmt.Sprintf("garden.memory %f %f source=cactus\n", 2.0, 2000.0)))
 		})
 	})
 })
