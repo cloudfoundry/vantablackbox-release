@@ -25,7 +25,7 @@ start_metrics_adapter() {
   while :
   do
     metrics-adapter \
-      -datadog-api-key <%= p('metrics_adapter.datadog_api_key') %> \
+      -wavefront-proxy-port <%= p('metrics_adapter.wavefront_proxy_port') %> \
       -host <%= p('metrics_adapter.hostname') %> \
       -garden-debug-endpoint <%= p('metrics_adapter.garden_debug_listen_address') %>
 

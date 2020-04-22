@@ -1,16 +1,18 @@
 #!/usr/bin/env bash
 
-export GOROOT=$(readlink -nf /var/vcap/packages/golang)
-export GOPATH=${BOSH_INSTALL_TARGET}
-export PATH=$GOROOT/bin:$PATH
+set -eu
 
-mkdir -p ${BOSH_INSTALL_TARGET}/src
-cp -ra * ${BOSH_INSTALL_TARGET}/src
+# This needs to be defined since bosh compilation VMs don't set $HOME.
+export GOCACHE=/tmp/gocache
+
+# Since this is only to be sourced in bosh packaging scripts, we can assume
+# that ./gopath is a GOPATH.
+export GOPATH; GOPATH="$( readlink -nf ./gopath )"
+
+export GOROOT; GOROOT="$( readlink -nf /var/vcap/packages/golang )"
+export PATH="${GOROOT}/bin:${PATH}"
 
 mkdir ${BOSH_INSTALL_TARGET}/bin
-pushd ${BOSH_INSTALL_TARGET}/src/metrics-adapter
-  go build -o metrics-adapter cmd/metrics-adapter/main.go
-  mv metrics-adapter ${BOSH_INSTALL_TARGET}/bin
+pushd metrics-adapter
+  go build -mod vendor -o "${BOSH_INSTALL_TARGET}/bin/metrics-adapter" ./cmd/metrics-adapter
 popd
-
-rm -rf ${BOSH_INSTALL_TARGET}/src
