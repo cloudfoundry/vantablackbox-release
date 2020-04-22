@@ -1,11 +1,11 @@
-package adapter_test
+package metricsadapter_test
 
 import (
 	"encoding/json"
-	adapter "metrics-adapter"
 	"net/http"
 	"time"
 
+	"github.com/masters-of-cats/metricsadapter"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -24,7 +24,7 @@ var _ = Describe("MetricsAdapter", func() {
 
 	Describe("CollectMetrics", func() {
 		var (
-			collectedMetrics adapter.DatadogSeries
+			collectedMetrics metricsadapter.DatadogSeries
 			collectErr       error
 			url              string
 		)
@@ -38,7 +38,7 @@ var _ = Describe("MetricsAdapter", func() {
 		})
 
 		JustBeforeEach(func() {
-			collectedMetrics, collectErr = adapter.CollectMetrics(url, "cactus")
+			collectedMetrics, collectErr = metricsadapter.CollectMetrics(url, "cactus")
 		})
 
 		It("does not return an error", func() {
@@ -46,17 +46,17 @@ var _ = Describe("MetricsAdapter", func() {
 		})
 
 		It("collects metrics from the debug server", func() {
-			expected := adapter.DatadogSeries{
-				Series: adapter.DatadogMetrics{
-					adapter.DatadogMetric{
+			expected := metricsadapter.DatadogSeries{
+				Series: metricsadapter.DatadogMetrics{
+					metricsadapter.DatadogMetric{
 						Metric: "garden.numGoroutines",
-						Points: adapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(19)}},
+						Points: metricsadapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(19)}},
 						Host:   "",
 						Tags:   []string{},
 					},
-					adapter.DatadogMetric{
+					metricsadapter.DatadogMetric{
 						Metric: "garden.memory",
-						Points: adapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(12345)}},
+						Points: metricsadapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(12345)}},
 						Host:   "",
 						Tags:   []string{},
 					},
@@ -96,17 +96,17 @@ var _ = Describe("MetricsAdapter", func() {
 		var (
 			emitErr        error
 			body           []byte
-			emittedMetrics = adapter.DatadogSeries{
-				Series: adapter.DatadogMetrics{
-					adapter.DatadogMetric{
+			emittedMetrics = metricsadapter.DatadogSeries{
+				Series: metricsadapter.DatadogMetrics{
+					metricsadapter.DatadogMetric{
 						Metric: "garden.numGoroutines",
-						Points: adapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(1)}},
+						Points: metricsadapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(1)}},
 						Host:   "",
 						Tags:   []string{},
 					},
-					adapter.DatadogMetric{
+					metricsadapter.DatadogMetric{
 						Metric: "garden.memory",
-						Points: adapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(2)}},
+						Points: metricsadapter.DatadogMetricPoints{[2]float64{float64(time.Now().Unix()), float64(2)}},
 						Host:   "",
 						Tags:   []string{},
 					},
@@ -124,7 +124,7 @@ var _ = Describe("MetricsAdapter", func() {
 		})
 
 		JustBeforeEach(func() {
-			emitErr = adapter.EmitMetrics(emittedMetrics, server.URL()+"/emit", "abc")
+			emitErr = metricsadapter.EmitMetrics(emittedMetrics, server.URL()+"/emit", "abc")
 		})
 
 		It("does not return an error", func() {
@@ -136,7 +136,7 @@ var _ = Describe("MetricsAdapter", func() {
 		})
 
 		It("emits valid metrics", func() {
-			var receivedMetrics adapter.DatadogSeries
+			var receivedMetrics metricsadapter.DatadogSeries
 			Expect(json.Unmarshal(body, &receivedMetrics)).To(Succeed())
 			Expect(receivedMetrics.Series).To(Equal(emittedMetrics.Series))
 		})

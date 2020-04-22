@@ -17,7 +17,7 @@ func TestMetricsAdapterIntegration(t *testing.T) {
 var metricsBinPath string
 
 var _ = BeforeSuite(func() {
-	metricsBinPath = gexecBuild("metrics-adapter/cmd/metrics-adapter")
+	metricsBinPath = gexecBuild("github.com/masters-of-cats/metricsadapter/cmd/metrics-adapter")
 })
 
 var _ = AfterSuite(func() {

@@ -4,8 +4,9 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	adapter "metrics-adapter"
 	"os"
+
+	"github.com/masters-of-cats/metricsadapter"
 )
 
 type flags struct {
@@ -33,10 +34,10 @@ func main() {
 	exitOn(err)
 
 	datadogURL := "https://app.datadoghq.com/api/v1/series"
-	datadogSeries, err := adapter.CollectMetrics(f.gardenDebugEndpoint, f.host)
+	datadogSeries, err := metricsadapter.CollectMetrics(f.gardenDebugEndpoint, f.host)
 	exitOn(err)
 
-	err = adapter.EmitMetrics(datadogSeries, datadogURL, f.dataDogAPIKey)
+	err = metricsadapter.EmitMetrics(datadogSeries, datadogURL, f.dataDogAPIKey)
 	exitOn(err)
 }
 
