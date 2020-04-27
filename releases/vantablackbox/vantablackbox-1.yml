@@ -1,7 +1,7 @@
 name: vantablackbox
 version: "1"
-commit_hash: "0899057"
-uncommitted_changes: false
+commit_hash: d51a6aa
+uncommitted_changes: true
 jobs:
 - name: metrics-adapter
   version: 77054c82a3f8d2e1897b5e597e98a977ce23e54c9bbf70d1a84d3ebb867f18a1
