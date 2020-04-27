@@ -1,4 +1,6 @@
-# github.com/golang/protobuf v1.2.0
+# github.com/caio/go-tdigest v2.3.0+incompatible
+github.com/caio/go-tdigest
+# github.com/golang/protobuf v1.3.1
 github.com/golang/protobuf/proto
 # github.com/hpcloud/tail v1.0.0
 github.com/hpcloud/tail
@@ -6,6 +8,12 @@ github.com/hpcloud/tail/ratelimiter
 github.com/hpcloud/tail/util
 github.com/hpcloud/tail/watch
 github.com/hpcloud/tail/winfile
+# github.com/maxbrunsfeld/counterfeiter/v6 v6.2.3
+## explicit
+github.com/maxbrunsfeld/counterfeiter/v6
+github.com/maxbrunsfeld/counterfeiter/v6/arguments
+github.com/maxbrunsfeld/counterfeiter/v6/command
+github.com/maxbrunsfeld/counterfeiter/v6/generator
 # github.com/onsi/ginkgo v1.12.0
 ## explicit
 github.com/onsi/ginkgo
@@ -43,13 +51,22 @@ github.com/onsi/gomega/matchers/support/goraph/edge
 github.com/onsi/gomega/matchers/support/goraph/node
 github.com/onsi/gomega/matchers/support/goraph/util
 github.com/onsi/gomega/types
-# golang.org/x/net v0.0.0-20180906233101-161cd47e91fd
+# github.com/wavefronthq/wavefront-sdk-go v0.9.5
+## explicit
+github.com/wavefronthq/wavefront-sdk-go/event
+github.com/wavefronthq/wavefront-sdk-go/histogram
+github.com/wavefronthq/wavefront-sdk-go/internal
+github.com/wavefronthq/wavefront-sdk-go/senders
+# golang.org/x/mod v0.1.1-0.20191105210325-c90efee705ee
+golang.org/x/mod/module
+golang.org/x/mod/semver
+# golang.org/x/net v0.0.0-20190628185345-da137c7871d7
 golang.org/x/net/html
 golang.org/x/net/html/atom
 golang.org/x/net/html/charset
 # golang.org/x/sys v0.0.0-20191120155948-bd437916bb0e
 golang.org/x/sys/unix
-# golang.org/x/text v0.3.0
+# golang.org/x/text v0.3.2
 golang.org/x/text/encoding
 golang.org/x/text/encoding/charmap
 golang.org/x/text/encoding/htmlindex
@@ -60,12 +77,27 @@ golang.org/x/text/encoding/korean
 golang.org/x/text/encoding/simplifiedchinese
 golang.org/x/text/encoding/traditionalchinese
 golang.org/x/text/encoding/unicode
+golang.org/x/text/internal/language
+golang.org/x/text/internal/language/compact
 golang.org/x/text/internal/tag
 golang.org/x/text/internal/utf8internal
 golang.org/x/text/language
 golang.org/x/text/runes
 golang.org/x/text/transform
-# golang.org/x/xerrors v0.0.0-20190717185122-a985d3407aa7
+# golang.org/x/tools v0.0.0-20200301222351-066e0c02454c
+golang.org/x/tools/go/ast/astutil
+golang.org/x/tools/go/gcexportdata
+golang.org/x/tools/go/internal/gcimporter
+golang.org/x/tools/go/internal/packagesdriver
+golang.org/x/tools/go/packages
+golang.org/x/tools/go/types/typeutil
+golang.org/x/tools/imports
+golang.org/x/tools/internal/fastwalk
+golang.org/x/tools/internal/gocommand
+golang.org/x/tools/internal/gopathwalk
+golang.org/x/tools/internal/imports
+golang.org/x/tools/internal/packagesinternal
+# golang.org/x/xerrors v0.0.0-20191011141410-1b5146add898
 golang.org/x/xerrors
 golang.org/x/xerrors/internal
 # gopkg.in/fsnotify.v1 v1.4.7

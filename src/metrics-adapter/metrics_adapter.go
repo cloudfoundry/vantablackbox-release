@@ -2,12 +2,14 @@ package metricsadapter
 
 import (
 	"encoding/json"
-	"fmt"
 	"io/ioutil"
-	"net"
 	"net/http"
 	"time"
+
+	wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
 )
+
+//go:generate go run github.com/maxbrunsfeld/counterfeiter/v6 github.com/wavefronthq/wavefront-sdk-go/senders.Sender
 
 type GardenMemStats struct {
 	Alloc float64 `json:"Alloc"`
@@ -25,10 +27,10 @@ type Series struct {
 }
 
 type Metric struct {
-	Metric string              `json:"metric"`
+	Metric string       `json:"metric"`
 	Points MetricPoints `json:"points"`
-	Host   string              `json:"host"`
-	Tags   []string            `json:"tags"`
+	Host   string       `json:"host"`
+	Tags   []string     `json:"tags"`
 }
 
 type MetricPoints [][2]float64
@@ -78,17 +80,12 @@ func getResponseBody(url string) ([]byte, error) {
 	return ioutil.ReadAll(response.Body)
 }
 
-func EmitMetrics(metrics Series, wavefrontAddress string) error {
-	conn, err := net.Dial("tcp", wavefrontAddress)
-	if err != nil {
-		return err
-	}
-	defer conn.Close()
+func EmitMetrics(metrics Series, wfSender wavefront.Sender) error {
+	defer wfSender.Flush()
 
 	for _, m := range metrics.Series {
 		for _, p := range m.Points {
-			_, err := fmt.Fprintf(conn, "%s %f %f source=%s\n", m.Metric, p[1], p[0], m.Host)
-			if err != nil {
+			if err := wfSender.SendMetric(m.Metric, p[1], int64(p[0]), m.Host, nil); err != nil {
 				return err
 			}
 		}

@@ -1,14 +1,12 @@
 package metricsadapter_test
 
 import (
-	"bufio"
-	"fmt"
-	"io"
-	"net"
+	"errors"
 	"net/http"
 	"time"
 
 	"github.com/masters-of-cats/metricsadapter"
+	fakes "github.com/masters-of-cats/metricsadapter/metrics-adapterfakes"
 	. "github.com/onsi/ginkgo"
 	. "github.com/onsi/gomega"
 	"github.com/onsi/gomega/ghttp"
@@ -94,47 +92,12 @@ var _ = Describe("MetricsAdapter", func() {
 	Describe("EmitMetrics", func() {
 		var (
 			emitErr        error
-			server         net.Listener
-			addr           string
-			requestsChan   chan string
+			wfSender       *fakes.FakeSender
 			emittedMetrics metricsadapter.Series
 		)
 
 		BeforeEach(func() {
-			var err error
-			server, err = net.Listen("tcp", "localhost:0")
-			Expect(err).NotTo(HaveOccurred())
-			addr = server.Addr().String()
-
-			requestsChan = make(chan string)
-
-			go func() {
-				defer GinkgoRecover()
-
-				for {
-					conn, err := server.Accept()
-					if err != nil {
-						close(requestsChan)
-						return
-					}
-
-					Expect(err).NotTo(HaveOccurred())
-
-					go func() {
-						defer GinkgoRecover()
-
-						connReader := bufio.NewReader(conn)
-						for {
-							line, err := connReader.ReadString('\n')
-							if err == io.EOF {
-								return
-							}
-							Expect(err).NotTo(HaveOccurred())
-							requestsChan <- line
-						}
-					}()
-				}
-			}()
+			wfSender = new(fakes.FakeSender)
 
 			emittedMetrics = metricsadapter.Series{
 				Series: metricsadapter.Metrics{
@@ -154,26 +117,43 @@ var _ = Describe("MetricsAdapter", func() {
 			}
 		})
 
-		AfterEach(func() {
-			server.Close()
-			Eventually(requestsChan).Should(BeClosed())
-		})
-
 		JustBeforeEach(func() {
-			emitErr = metricsadapter.EmitMetrics(emittedMetrics, addr)
+			emitErr = metricsadapter.EmitMetrics(emittedMetrics, wfSender)
 		})
 
 		It("does not return an error", func() {
 			Expect(emitErr).NotTo(HaveOccurred())
 		})
 
-		It("posts metric in wavefront proxy format", func() {
-			var metricsLine string
-			Eventually(requestsChan).Should(Receive(&metricsLine))
-			Expect(metricsLine).To(Equal(fmt.Sprintf("garden.numGoroutines %f %f source=cactus\n", 1.0, 1000.0)))
+		It("flushes the wavefront sender", func() {
+			Expect(wfSender.FlushCallCount()).To(Equal(1))
+		})
 
-			Eventually(requestsChan).Should(Receive(&metricsLine))
-			Expect(metricsLine).To(Equal(fmt.Sprintf("garden.memory %f %f source=cactus\n", 2.0, 2000.0)))
+		It("posts metric in wavefront proxy format", func() {
+			Expect(wfSender.SendMetricCallCount()).To(Equal(2))
+			actualMetricName, actualValue, actualTimestamp, actualHost, actualTags := wfSender.SendMetricArgsForCall(0)
+			Expect(actualMetricName).To(Equal("garden.numGoroutines"))
+			Expect(actualValue).To(Equal(1.0))
+			Expect(actualTimestamp).To(Equal(int64(1000)))
+			Expect(actualHost).To(Equal("cactus"))
+			Expect(actualTags).To(BeNil())
+
+			actualMetricName, actualValue, actualTimestamp, actualHost, actualTags = wfSender.SendMetricArgsForCall(1)
+			Expect(actualMetricName).To(Equal("garden.memory"))
+			Expect(actualValue).To(Equal(2.0))
+			Expect(actualTimestamp).To(Equal(int64(2000)))
+			Expect(actualHost).To(Equal("cactus"))
+			Expect(actualTags).To(BeNil())
+		})
+
+		When("the wavefront sender fails", func() {
+			BeforeEach(func() {
+				wfSender.SendMetricReturns(errors.New("wf-error"))
+			})
+
+			It("returns the error", func() {
+				Expect(emitErr).To(MatchError("wf-error"))
+			})
 		})
 	})
 })

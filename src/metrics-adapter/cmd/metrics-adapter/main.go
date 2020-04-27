@@ -7,6 +7,7 @@ import (
 	"os"
 
 	"github.com/masters-of-cats/metricsadapter"
+	wavefront "github.com/wavefronthq/wavefront-sdk-go/senders"
 )
 
 type flags struct {
@@ -36,7 +37,16 @@ func main() {
 	series, err := metricsadapter.CollectMetrics(f.gardenDebugEndpoint, f.host)
 	exitOn(err)
 
-	err = metricsadapter.EmitMetrics(series, fmt.Sprintf("localhost:%d", f.wavefrontProxyPort))
+	proxyCfg := &wavefront.ProxyConfiguration{
+		Host:        "localhost",
+		MetricsPort: f.wavefrontProxyPort,
+	}
+
+	sender, err := wavefront.NewProxySender(proxyCfg)
+	exitOn(err)
+	defer sender.Close()
+
+	err = metricsadapter.EmitMetrics(series, sender)
 	exitOn(err)
 }
 
