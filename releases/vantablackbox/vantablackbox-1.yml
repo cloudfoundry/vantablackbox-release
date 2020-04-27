@@ -1,0 +1,27 @@
+name: vantablackbox
+version: "1"
+commit_hash: "0899057"
+uncommitted_changes: false
+jobs:
+- name: metrics-adapter
+  version: 77054c82a3f8d2e1897b5e597e98a977ce23e54c9bbf70d1a84d3ebb867f18a1
+  fingerprint: 77054c82a3f8d2e1897b5e597e98a977ce23e54c9bbf70d1a84d3ebb867f18a1
+  sha1: sha256:5adcf7bcb10e1c0879d930665a46cdde87a47536ee07d5883108d7a719847255
+  packages:
+  - metrics-adapter
+packages:
+- name: golang
+  version: f691195cc78e8e7e3999e936c9529457221b72e10eff4337083f9a12496d18b1
+  fingerprint: f691195cc78e8e7e3999e936c9529457221b72e10eff4337083f9a12496d18b1
+  sha1: sha256:c845993ea72485cfe2a069372fbd60b08f2e456029e2e7db3270994ecff463c8
+  dependencies: []
+- name: metrics-adapter
+  version: c6c969e1cf6c5a9a6e372a54d4dbb8c9f8b592050e9a7960768f2f0799b77a80
+  fingerprint: c6c969e1cf6c5a9a6e372a54d4dbb8c9f8b592050e9a7960768f2f0799b77a80
+  sha1: sha256:0a122f66798da9615a6c7e0e0db277f7766bbd9ebbfa72569d05124288caeb9e
+  dependencies:
+  - golang
+license:
+  version: 8779ecf2a4f9e083480f63b8e0a3b135d424ed669ec74a98f24f473fa24365b2
+  fingerprint: 8779ecf2a4f9e083480f63b8e0a3b135d424ed669ec74a98f24f473fa24365b2
+  sha1: sha256:17bcb18eda9ca9af8635a050c1351dd6f03c33f38ff759c87a80a5be6a717e26
